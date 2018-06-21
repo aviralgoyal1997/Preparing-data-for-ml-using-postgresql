@@ -1,0 +1,93 @@
+spartan@Spartan:~/Documents/louisville-yelp-data$ sudo -u postgres psqlpsql (9.5.12)
+Type "help" for help.
+
+postgres=# create database test1;
+CREATE DATABASE
+postgres=# \c test1;
+You are now connected to database "test1" as user "postgres".
+test1=# create table business_imp (business_id int, name varchar(1000), address varchar(1000), city varchar(1000), state varchar(100), postal_code varchar(100), latitude varchar(100), longitude varchar(100), phone_number varchar(100));
+CREATE TABLE
+test=1# COPY business_imp FROM '/home/spartan/Documents/louisville-yelp-data/yelp-data-3.csv' DELIMITER ',' CSV HEADER;
+copy2375
+
+test1=# create table inspections_imp(business_id int,score varchar(10),idate varchar(8),itype varchar(100));
+CREATE TABLE
+test1=# COPY inspections_imp FROM '/home/spartan/Documents/louisville-yelp-data/yelp-data-1.csv' DELIMITER ',' CSV HEADER;
+COPY 31500
+
+test1=# create table violations_imp(business_id int,vdate varchar(8),description varchar(1000));
+CREATE TABLE
+test1=# COPY violations_imp FROM '/home/spartan/Documents/louisville-yelp-data/yelp-data-2.csv' DELIMITER ',' CSV HEADER;
+COPY 66156
+
+#what is use of index
+SQL index is like index in book when wa wnat to search for a chapter we go to index and get page no and directly go there instead of looking at each page in book similarly we want to search any row by its index then instead of looking at every column just find that index in index list and go to address that index points to.
+
+test1=# create index inx_inspections_businessid on inspections_imp (business_id);
+CREATE INDEX
+test1=# create index inx_violations_businessidvdate on violations_imp (business_id, vdate);
+CREATE INDEX
+
+ to remove a substring from description column,here we find position of '[data violation c..' and then only use part before that position
+test1=# update violations_imp set description = substr(description,1,POSITION('[ date violation corrected:' IN description)-1) where POSITION(' [ date violation corrected:' IN description) > 0;
+UPDATE 0
+
+Gonna write yes or no for each restaurant if its inspected or not.
+test1=# alter table business_imp add column inspection varchar(3);
+ALTER TABLE
+
+test1=# update business_imp set inspection = 'Yes' where business_id in (select business_id from inspections_imp);
+UPDATE 2352
+test1=# update business_imp set inspection = 'No' where business_id not in (select business_id from inspections_imp);
+UPDATE 23
+test1=# select count(business_id) from business_imp;
+ count 
+-------
+  2375
+(1 row)
+
+
+Joining tables
+
+
+
+test1=# select a.name,a.address,a.city,a.state,a.postal_code,a.latitude,a.longitude,a.phone_number,a.inspection,b.score,concat(substr(b.idate,1,4),'-',substr(b.idate,5,2),'-',substr(b.idate,7,2)),b.itype,c.description from business_imp a left join inspections_imp b on (a.business_id = b.business_id) left join violations_imp c on (b.business_id=c.business_id and b.idate = c.vdate);
+test1=# select a.name,a.address,a.city,a.state,a.postal_code,a.latitude,a.longitude,a.phone_number,a.inspection,b.score,concat(substr(b.idate,1,4),'-',substr(b.idate,5,2),'-',substr(b.idate,7,2)),b.itype,c.description into new_table from business_imp a left join inspections_imp b on (a.business_id = b.business_id) left join violations_imp c on (b.business_id=c.business_id and b.idate = c.vdate);
+SELECT 78087
+
+
+Exporting new_table into csv
+
+test1=# copy new_table to '/tmp/asq.csv' delimiter ',' CSV;
+COPY 78087
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
